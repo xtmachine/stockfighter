@@ -1,10 +1,15 @@
 from stockfighter import Stockfighter
+from stockfighter import GM
 
-# Globals
-ACCT = 'SRB39147702'
-VENUE = 'POMEX'
-SYMB = 'TRI'
+# Start level 1
+gm = GM()
+level = gm.start('first_steps')
+
+# Get venue and account information
+acct = level['account']
+venue = level['venues'][0]
+symb = level['tickers'][0]
 
 # Buy 100 shares
-s = Stockfighter(venue=VENUE, account=ACCT)
-s.place_new_order(SYMB, None, 100, 'buy', 'market')
+s = Stockfighter(venue=venue, account=acct)
+s.place_new_order(symb, None, 100, 'buy', 'market')
