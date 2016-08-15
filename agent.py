@@ -14,9 +14,9 @@ class Agent(object):
             raise ValueError('Max quantity must be non-negative')
 
     def rand_act(self):
-
         # Determine price
-        price = random.randint(0, self.max_price)
+        #price = random.randint(0, self.max_price)
+        price = None
 
         # Determine quantity
         qty = random.randint(0, self.max_qty)
@@ -27,7 +27,8 @@ class Agent(object):
             direction = 'sell'
 
         # Determine order_type
-        types = ['limit', 'market', 'fill-or-kill', 'immediate-or-cancel']
+        #types = ['limit', 'market', 'fill-or-kill', 'immediate-or-cancel']
+        types = ['market']
         type_idx = random.randint(0, len(types)-1)
         order_type = types[type_idx]
 
