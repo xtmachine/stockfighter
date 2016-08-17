@@ -2,19 +2,31 @@ from stockfighter import Stockfighter
 from stockfighter import GM
 import numpy as np
 
-class env(object):
+class Env(object):
 
     def __init__(self):
-        self.action_space = 0 # TODO
+        self.action_space = Discrete() 
         self.observation_space = 0 # TODO
 
     def step(self, action):
-        qty, direction = action
+        qty = 1
+        if action == 0:
+            direction = 'sell'
+            self.state -= 1
+        else:
+            direction = 'buy'
+            self.state += 1
         self.market.place_new_order(self.stock,
                                     None,
                                     qty,
                                     direction,
                                     'market')
+        reward = self.state
+        if self.state > 99:
+            done = True
+        else:
+            done = False
+        return np.array(self.state), reward, done, {}
 
     def reset(self):
         self.gm = GM()
@@ -27,6 +39,12 @@ class env(object):
         self.state = 0 # init position to 0 
         return np.array(self.state)
 
-class action_space(object):
-    def __init__(self, n):
-        pass
+class Discrete(object):
+    def __init__(self):
+        self.n = 2
+
+    def sample(self):
+        return np.random.randint(self.n) 
+
+    def contains(self, x):
+        return x == 0 or x == 1
