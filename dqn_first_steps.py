@@ -30,9 +30,8 @@ dqn = DQNAgent(model=model, nb_actions=nb_actions, memory=memory, nb_steps_warmu
                        target_model_update=1e-2, policy=policy)
 dqn.compile(Adam(lr=1e-3), metrics=['mae'])
 
-dqn.fit(env, nb_steps=100, visualize=False, verbose=2)
+dqn.fit(env, nb_steps=300, visualize=False, verbose=2)
 
 # Restart level for testing
 env.gm.restart(env.instance_id)
-env = first_steps.Env()
 dqn.test(env, nb_episodes=1, visualize=False)

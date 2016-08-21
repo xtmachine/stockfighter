@@ -9,17 +9,11 @@ class Env(object):
         self.action_space = spaces.Discrete(2) 
         self.observation_space = spaces.Box(-10000, 10000, (2,)) 
 
-        self.gm = GM()
-        self.level = self.gm.start('first_steps')
-        self.instance_id = self.level['instanceId']
-        self.acct = self.level['account']
-        self.venue = self.level['venues'][0]
-        self.stock = self.level['tickers'][0]
-        self.market = Stockfighter(self.venue, self.acct)
 
         self.reset()
 
     def step(self, action):
+        old_pos = self.pos
         # place order
         qty = 10
         if action == 0:
@@ -55,11 +49,11 @@ class Env(object):
         self.state = [self.pos, self.bal]
         print "iter:" + str(self.iter)
         print self.state
-        reward = self.state[0]
+        reward = self.pos - old_pos 
         self.iter += 1
 
         # restart level if termination conditions are met
-        if self.state[0] > 99 or self.state[0] < -25 or self.iter > 100:
+        if self.state[0] > 99 or self.state[0] < -99 or self.iter > 100:
             done = True
         else:
             done = False
@@ -67,6 +61,13 @@ class Env(object):
         return np.array(self.state), reward, done, {}
 
     def reset(self):
+        self.gm = GM()
+        self.level = self.gm.start('first_steps')
+        self.instance_id = self.level['instanceId']
+        self.acct = self.level['account']
+        self.venue = self.level['venues'][0]
+        self.stock = self.level['tickers'][0]
+        self.market = Stockfighter(self.venue, self.acct)
         self.iter = 0
         self.pending_orders = []
         self.completed_orders = []
