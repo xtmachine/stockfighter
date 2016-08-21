@@ -1,3 +1,4 @@
+import time
 import first_steps
 import numpy as np
 
@@ -31,7 +32,11 @@ dqn = DQNAgent(model=model, nb_actions=nb_actions, memory=memory, nb_steps_warmu
 dqn.compile(Adam(lr=1e-3), metrics=['mae'])
 
 dqn.fit(env, nb_steps=300, visualize=False, verbose=2)
+dqn.save_weights('first_steps_weights.h5f', overwrite=True)
 
-# Restart level for testing
-env.gm.restart(env.instance_id)
-dqn.test(env, nb_episodes=1, visualize=False)
+# TODO: Move testing to a separate file?
+# Wait 5 minutes then Restart level for testing
+# time.sleep(300)
+# env.gm.restart(env.instance_id)
+# env = first_steps.Env()
+# dqn.test(env, nb_episodes=1, visualize=False)
