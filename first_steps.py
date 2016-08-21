@@ -12,7 +12,6 @@ class Env(object):
         self.gm = GM()
         self.level = self.gm.start('first_steps')
         self.instance_id = self.level['instanceId']
-        #self.gm.restart(self.instance_id)
         self.acct = self.level['account']
         self.venue = self.level['venues'][0]
         self.stock = self.level['tickers'][0]
@@ -22,7 +21,7 @@ class Env(object):
 
     def step(self, action):
         # place order
-        qty = 11
+        qty = 10
         if action == 0:
             direction = 'sell'
             self.state[0] -= qty
@@ -30,10 +29,10 @@ class Env(object):
             direction = 'buy'
             self.state[0] += qty
         order = self.market.place_new_order(self.stock,
-                                    None,
-                                    qty,
-                                    direction,
-                                    'market')
+                                            None,
+                                            qty,
+                                            direction,
+                                            'market')
         try:
             order_id = order['id']
             self.pending_orders.append(order_id)
@@ -59,11 +58,12 @@ class Env(object):
         reward = self.state[0]
         self.iter += 1
 
-        # restart level if win/lose conditions are met
+        # restart level if termination conditions are met
         if self.state[0] > 99 or self.state[0] < -25 or self.iter > 100:
             done = True
         else:
             done = False
+
         return np.array(self.state), reward, done, {}
 
     def reset(self):
