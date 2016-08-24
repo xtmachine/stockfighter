@@ -1,5 +1,4 @@
-import time
-import first_steps
+#import chock_a_block
 import numpy as np
 
 from keras.models import Sequential
@@ -10,7 +9,8 @@ from rl.agents.dqn import DQNAgent
 from rl.policy import BoltzmannQPolicy
 from rl.memory import SequentialMemory
 
-env = first_steps.Env()
+#env = chock_a_block.Env()
+env = Env()
 nb_actions = env.action_space.n
 
 model = Sequential()
@@ -32,11 +32,4 @@ dqn = DQNAgent(model=model, nb_actions=nb_actions, memory=memory, nb_steps_warmu
 dqn.compile(Adam(lr=1e-3), metrics=['mae'])
 
 dqn.fit(env, nb_steps=300, visualize=False, verbose=2)
-dqn.save_weights('first_steps_weights.h5f', overwrite=True)
-
-#TODO: Move testing to a separate file?
-#Wait 5 minutes then Restart level for testing
-#time.sleep(300)
-#env.gm.restart(env.instance_id)
-#env = first_steps.Env()
-#dqn.test(env, nb_episodes=1, visualize=False)
+dqn.save_weights('chock_a_block.h5f', overwrite=True)
