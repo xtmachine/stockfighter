@@ -1,4 +1,4 @@
-#import chock_a_block
+import chock_a_block
 import numpy as np
 
 from keras.models import Sequential
@@ -9,8 +9,7 @@ from rl.agents.dqn import DQNAgent
 from rl.policy import BoltzmannQPolicy
 from rl.memory import SequentialMemory
 
-#env = chock_a_block.Env()
-env = Env()
+env = chock_a_block.Env()
 nb_actions = env.action_space.n
 
 model = Sequential()

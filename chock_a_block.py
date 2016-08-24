@@ -6,8 +6,12 @@ from gym import spaces
 class Env(object):
 
     def __init__(self):
-        self.action_space = spaces.Discrete(2) 
-        self.observation_space = spaces.Box(-1000000, 1000000, (2,)) 
+        self.action_space = spaces.Discrete(2)
+        high = np.array([
+            10000000,
+            10000000,
+            10000000])
+        self.observation_space = spaces.Box(-high, high)
 
         self.gm = GM()
         self.level = self.gm.start('chock_a_block')
@@ -40,7 +44,7 @@ class Env(object):
         except:
             pass
 
-        # update balance and position
+        # update balance and position and mean
         for order_id in self.pending_orders:
             status = self.market.status_for_order(order_id, self.stock)
             if not status['open']:
@@ -53,7 +57,9 @@ class Env(object):
                         self.pos -= fill['qty']
                         self.bal += fill['qty'] * fill['price']
 
-        self.state = [self.pos, self.bal]
+        self.mean_price = self.get_mean()
+
+        self.state = [self.pos, self.bal, self.mean_price]
         print "iter:" + str(self.iter)
         print self.state
         reward = self.pos - old_pos 
@@ -73,5 +79,21 @@ class Env(object):
         self.completed_orders = []
         self.pos = 0
         self.bal = 0
-        self.state = [self.pos, self.bal]
+        self.mean_price = self.get_mean()
+        print "test"
+        print self.mean_price
+        self.state = [self.pos, self.bal, self.mean_price]
         return np.array(self.state)
+
+    def get_mean(self):
+        """
+        Gets the mean of prices in the order book.
+        """
+        prices = []
+        book = self.market.orderbook_for_stock(self.stock)
+        print book
+        asks = book['asks']
+        for ask in asks:
+            prices.append(ask['price'])
+        mean = np.mean(np.array(prices))
+        return mean
