@@ -21,12 +21,16 @@ class Env(object):
         self.stock = self.level['tickers'][0]
         self.market = Stockfighter(self.venue, self.acct)
 
+        # initialize price
+        self.mean_price = None
+        while self.mean_price is None:
+            self.mean_price = self.get_mean()
+
+        self.start_price = self.mean_price # start price used for reward
+
         self.reset()
 
     def step(self, action):
-        # store old position
-        old_pos = self.pos
-
         # place order
         qty = 25
         if action == 0:
@@ -61,12 +65,13 @@ class Env(object):
 
         self.state = [self.pos, self.bal, self.mean_price]
         print "iter:" + str(self.iter)
+        print ['pos', 'bal', 'mean price']
         print self.state
-        reward = self.pos - old_pos 
+        reward = 1 /(np.abs(self.mean_price - self.start_price) + 1)
         self.iter += 1
 
         # restart level if termination conditions are met
-        if self.state[0] > 99 or self.state[0] < -99 or self.iter > 50:
+        if  self.iter > 500:
             done = True
         else:
             done = False
@@ -80,20 +85,21 @@ class Env(object):
         self.pos = 0
         self.bal = 0
         self.mean_price = self.get_mean()
-        print "test"
-        print self.mean_price
         self.state = [self.pos, self.bal, self.mean_price]
         return np.array(self.state)
 
     def get_mean(self):
         """
-        Gets the mean of prices in the order book.
+        Gets the mean of prices in the order book
+        if possible. Otherwise, it returns the previous mean.
         """
         prices = []
         book = self.market.orderbook_for_stock(self.stock)
-        print book
-        asks = book['asks']
-        for ask in asks:
-            prices.append(ask['price'])
-        mean = np.mean(np.array(prices))
-        return mean
+        try:
+            asks = book['asks']
+            for ask in asks:
+                prices.append(ask['price'])
+            self.mean_price = np.mean(np.array(prices))
+        except:
+            pass
+        return self.mean_price
