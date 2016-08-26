@@ -28,6 +28,12 @@ class Env(object):
 
         self.start_price = self.mean_price # start price used for reward
 
+        # initialize vol
+        self.buy_vol = None
+        self.sell_vol = None
+        while self.buy_vol is None or self.sell_vol is None:
+            self.buy_vol, self.sell_vol = self.get_vol()
+
         self.reset()
 
     def step(self, action):
@@ -49,6 +55,7 @@ class Env(object):
             pass
 
         # update balance and position and mean
+        old_pos = self.pos
         for order_id in self.pending_orders:
             status = self.market.status_for_order(order_id, self.stock)
             if not status['open']:
@@ -60,18 +67,37 @@ class Env(object):
                     else:
                         self.pos -= fill['qty']
                         self.bal += fill['qty'] * fill['price']
+        self.cost = -self.bal
+        if self.pos > 0:
+            self.avg_cost = self.cost / self.pos
+        else:
+            self.avg_cost = 0
 
         self.mean_price = self.get_mean()
+        self.buy_vol, self.sell_vol = self.get_vol()
 
-        self.state = [self.pos, self.bal, self.mean_price]
+        self.state = [self.mean_price, self.buy_vol, self.sell_vol]
+
         print "iter:" + str(self.iter)
-        print ['pos', 'bal', 'mean price']
+        print ['mean price', 'buy_vol', 'sell vol']
         print self.state
-        reward = 1 /(np.abs(self.mean_price - self.start_price) + 1)
+
+        # reward for keeping the price change small
+        if self.avg_cost > .0001:
+            reward = 1.0 / self.avg_cost
+            # add additional reward if pos inc
+            if self.pos - old_pos > 0:
+                reward += 1.0 / self.avg_cost
+        else:
+            reward = 0
+
+
+        print "reward:" + str(reward)
+
         self.iter += 1
 
         # restart level if termination conditions are met
-        if  self.iter > 500:
+        if  self.iter > 100:
             done = True
         else:
             done = False
@@ -84,8 +110,9 @@ class Env(object):
         self.completed_orders = []
         self.pos = 0
         self.bal = 0
-        self.mean_price = self.get_mean()
-        self.state = [self.pos, self.bal, self.mean_price]
+        self.cost = -self.bal
+        self.avg_cost = 0
+        self.state = [self.mean_price, self.buy_vol, self.sell_vol]
         return np.array(self.state)
 
     def get_mean(self):
@@ -103,3 +130,27 @@ class Env(object):
         except:
             pass
         return self.mean_price
+
+    def get_vol(self):
+        """
+        Gets the vol of prices in the order book
+        if possible. Otherwise, it returns the previous vol.
+        """
+        buy_vol = 0
+        sell_vol = 0
+        book = self.market.orderbook_for_stock(self.stock)
+        try:
+            asks = book['asks']
+            for ask in asks:
+                sell_vol += ask['qty']
+            self.sell_vol = sell_vol
+        except:
+            pass
+        try:
+            bids = book['bids']
+            for bid in bids:
+                buy_vol += bid['qty']
+            self.buy_vol = buy_vol
+        except:
+            pass
+        return [self.buy_vol, self.sell_vol]
