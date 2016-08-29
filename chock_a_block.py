@@ -6,7 +6,24 @@ from gym import spaces
 class Env(object):
 
     def __init__(self):
-        self.action_space = spaces.Discrete(2)
+
+        # action space
+        self.max_price = 10000
+        self.min_price = 0
+        self.max_qty = 100
+        self.min_qty = 0
+        self.max_dir = 1 # buy if max_dir > 0
+        self.min_dir = -1
+        action_max = np.array([self.max_price,
+            self.max_qty,
+            self.max_dir])
+        action_min = np.array([self.min_price,
+            self.min_qty,
+            self.min_dir])
+
+        self.action_space = spaces.Box(low = action_min, high = action_max)
+
+        # observation space
         high = np.array([
             10000000,
             10000000,
@@ -37,17 +54,38 @@ class Env(object):
         self.reset()
 
     def step(self, action):
-        # place order
-        qty = 25
-        if action == 0:
-            direction = 'sell'
-        else:
+        reward = 0
+        # set price 
+        try:
+            price = int(action[0])
+        except:
+            price = 0
+        print "\nprice chosen:" + str(price)
+
+        # set quantity
+        try:
+            qty = np.int(action[1])
+        except:
+            qty = 0
+        print "qty chosen:" + str(qty)
+
+        # set direction
+        try:
+            if action[3] > 0:
+                direction = 'buy'
+            else:
+                direction = 'sell'
+        except:
             direction = 'buy'
+        print "direction chosen:" + direction
+
+        print "action: " + str(action)
+
         order = self.market.place_new_order(self.stock,
-                                            None,
+                                            price,
                                             qty,
                                             direction,
-                                            'market')
+                                            'limit')
         try:
             order_id = order['id']
             self.pending_orders.append(order_id)
@@ -56,6 +94,7 @@ class Env(object):
 
         # update balance and position and mean
         old_pos = self.pos
+        old_avg_cost = self.avg_cost
         for order_id in self.pending_orders:
             status = self.market.status_for_order(order_id, self.stock)
             if not status['open']:
@@ -83,24 +122,33 @@ class Env(object):
         print self.state
 
         # reward for keeping the price change small
-        if self.avg_cost > .0001:
-            reward = 1.0 / self.avg_cost
-            # add additional reward if pos inc
-            if self.pos - old_pos > 0:
-                reward += 1.0 / self.avg_cost
-        else:
-            reward = 0
+        #if self.avg_cost > .0001:
+        #    reward = 1.0 / self.avg_cost
+        #    # add additional reward if pos inc
+        #    if self.pos - old_pos > 0:
+        #        reward += 1.0 / self.avg_cost
+        #else:
+        #    reward = 0
 
+        # reward for pos inc
+        if self.pos - old_pos > 0:
+            reward += 10
+        # penalty for avg cost inc
+        if self.avg_cost - old_avg_cost > 0:
+            reward -= 5
+        reward -= 1 # penalize for each step taken
 
-        print "reward:" + str(reward)
+        print "\nreward:" + str(reward) + "\n"
 
         self.iter += 1
 
+        done = False
+
         # restart level if termination conditions are met
-        if  self.iter > 100:
-            done = True
-        else:
-            done = False
+        #if  self.iter > 100:
+        #    done = True
+        #else:
+        #    done = False
 
         return np.array(self.state), reward, done, {}
 
