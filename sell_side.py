@@ -14,14 +14,14 @@ class Env(object):
         self.min_qty = 0
         self.max_dir = 1 # buy if max_dir > 0
         self.min_dir = -1
-        action_max = np.array([self.max_price,
+        self.action_max = np.array([self.max_price,
             self.max_qty,
             self.max_dir])
-        action_min = np.array([self.min_price,
+        self.action_min = np.array([self.min_price,
             self.min_qty,
             self.min_dir])
-
-        self.action_space = spaces.Box(low = action_min, high = action_max)
+        self.action_space = spaces.Box(low = self.action_min,
+                high = self.action_max)
 
         # observation space
         high = np.array([
@@ -31,7 +31,7 @@ class Env(object):
         self.observation_space = spaces.Box(-high, high)
 
         self.gm = GM()
-        self.level = self.gm.start('chock_a_block')
+        self.level = self.gm.start('sell_side')
         self.instance_id = self.level['instanceId']
         self.acct = self.level['account']
         self.venue = self.level['venues'][0]
@@ -55,6 +55,7 @@ class Env(object):
 
     def step(self, action):
         reward = 0
+        action = np.clip(action, self.action_min, self.action_max)
         # set price 
         try:
             if action[0] < 0:
