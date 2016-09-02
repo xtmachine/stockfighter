@@ -31,7 +31,7 @@ class Env(object):
         self.observation_space = spaces.Box(-high, high)
 
         self.gm = GM()
-        self.level = self.gm.start('sell_side')
+        self.level = self.gm.start('dueling_bulldozers')
         self.instance_id = self.level['instanceId']
         self.acct = self.level['account']
         self.venue = self.level['venues'][0]
@@ -54,8 +54,6 @@ class Env(object):
         self.reset()
 
     def step(self, action):
-        print "\nRaw action:"
-        print str(action)
         reward = 0
         action = np.clip(action, self.action_min, self.action_max)
         # set price 
@@ -66,6 +64,7 @@ class Env(object):
                 price = int(action[0])
         except:
             price = 0
+        print "\nprice chosen:" + str(price)
 
         # set quantity
         try:
@@ -75,6 +74,7 @@ class Env(object):
                 qty = np.int(action[1])
         except:
             qty = 0
+        print "qty chosen:" + str(qty)
 
         # set direction
         try:
@@ -84,9 +84,9 @@ class Env(object):
                 direction = 'sell'
         except:
             direction = 'buy'
+        print "direction chosen:" + direction
 
-        print "Action chosen: " 
-        print str(action)
+        print "action: " + str(action)
 
         order = self.market.place_new_order(self.stock,
                                             price,
@@ -151,11 +151,11 @@ class Env(object):
 
         done = False
 
-        ## restart level if termination conditions are met
-        #if  self.iter > 10:
-        #    done = True
-        #else:
-        #    done = False
+        # restart level if termination conditions are met
+        if  self.iter > 10:
+            done = True
+        else:
+            done = False
 
         return np.array(self.state), reward, done, {}
 

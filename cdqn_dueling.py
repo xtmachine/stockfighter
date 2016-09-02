@@ -1,6 +1,6 @@
 import numpy as np
 import gym
-import sell_side
+import dueling
 
 from keras.models import Sequential, Model
 from keras.layers import Dense, Activation, Flatten, Input, merge, BatchNormalization
@@ -12,7 +12,7 @@ from rl.random import OrnsteinUhlenbeckProcess
 
 
 # Get the environment and extract the number of actions.
-env = sell_side.Env()
+env = dueling.Env()
 np.random.seed(123)
 #env.seed(123)
 #assert len(env.action_space.shape) == 1
@@ -22,6 +22,7 @@ nb_actions = env.action_space.shape[0]
 V_model = Sequential()
 V_model.add(Flatten(input_shape=(1,) + env.observation_space.shape))
 V_model.add(Dense(16))
+#V_model.add(BatchNormalization())
 V_model.add(Activation('relu'))
 V_model.add(Dense(16))
 V_model.add(Activation('relu'))
@@ -62,7 +63,7 @@ print(L_model.summary())
 memory = SequentialMemory(limit=100000)
 random_process = OrnsteinUhlenbeckProcess(theta=.15, mu=0., sigma=.3, size=nb_actions)
 agent = ContinuousDQNAgent(nb_actions=nb_actions, V_model=V_model, L_model=L_model, mu_model=mu_model,
-                           memory=memory, nb_steps_warmup=100, random_process=random_process,
+                           memory=memory, nb_steps_warmup=5, random_process=random_process,
                            gamma=.99, target_model_update=1e-3)
 agent.compile(Adam(lr=.001, clipnorm=1.), metrics=['mse'])
 
