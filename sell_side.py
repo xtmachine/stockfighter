@@ -43,6 +43,8 @@ class Env(object):
         while self.mean_price is None:
             self.mean_price = self.get_mean()
 
+        self.mean_price = np.floor(self.get_mean())
+
         self.start_price = self.mean_price # start price used for reward
 
         # initialize vol
@@ -57,36 +59,38 @@ class Env(object):
         print "\nRaw action:"
         print str(action)
         reward = 0
+        #action[np.isnan(action)] = 0
         action = np.clip(action, self.action_min, self.action_max)
+        action = np.floor(action)
         # set price 
-        try:
-            if action[0] < 0:
-                price = 0
-            else:
-                price = int(action[0])
-        except:
-            price = 0
-
-        # set quantity
-        try:
-            if action[1] < 0:
-                qty = 0
-            else:
-                qty = np.int(action[1])
-        except:
-            qty = 0
+        #try:
+        if action[0] < 0:
+            price = int(self.mean_price) + 0
+        else:
+            price = int(self.mean_price) + int(action[0])
+        #except:
+        #    price = int(self.mean_price) + 0
 
         # set direction
-        try:
-            if action[2] > 0:
-                direction = 'buy'
-            else:
-                direction = 'sell'
-        except:
+        #try:
+        if action[2] > .5:
             direction = 'buy'
+        else:
+            direction = 'sell'
+        #except:
+        #    direction = 'buy'
+
+        # set quantity
+        #qty = 0
+        #try:
+        if direction == 'buy':
+            qty = self.sell_vol + np.int(action[1])
+        else:
+            qty = self.buy_vol + np.int(action[1])
+
 
         print "Action chosen: " 
-        print str(action)
+        print str([price, qty, direction])
 
         order = self.market.place_new_order(self.stock,
                                             price,
@@ -104,15 +108,19 @@ class Env(object):
         old_avg_cost = self.avg_cost
         for order_id in self.pending_orders:
             status = self.market.status_for_order(order_id, self.stock)
-            if not status['open']:
-                self.pending_orders.remove(order_id)
-                for fill in status['fills']:
-                    if status['direction'] == 'buy':
-                        self.pos += fill['qty']
-                        self.bal -= fill['qty'] * fill['price']
-                    else:
-                        self.pos -= fill['qty']
-                        self.bal += fill['qty'] * fill['price']
+            try:
+                if not status['open']:
+                    self.pending_orders.remove(order_id)
+                    for fill in status['fills']:
+                        if status['direction'] == 'buy':
+                            self.pos += fill['qty']
+                            self.bal -= fill['qty'] * fill['price']
+                        else:
+                            self.pos -= fill['qty']
+                            self.bal += fill['qty'] * fill['price']
+            except:
+                pass
+
         self.cost = -self.bal
         if self.pos > 0:
             self.avg_cost = self.cost / self.pos
@@ -120,6 +128,7 @@ class Env(object):
             self.avg_cost = 0
 
         self.mean_price = self.get_mean()
+        self.mean_price = np.floor(self.mean_price)
         self.buy_vol, self.sell_vol = self.get_vol()
 
         self.state = [self.mean_price, self.buy_vol, self.sell_vol]
@@ -181,7 +190,7 @@ class Env(object):
             asks = book['asks']
             for ask in asks:
                 prices.append(ask['price'])
-            self.mean_price = np.mean(np.array(prices))
+            self.mean_price = np.floor(np.mean(np.array(prices)))
         except:
             pass
         return self.mean_price

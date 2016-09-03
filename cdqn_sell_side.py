@@ -40,7 +40,7 @@ mu_model.add(Activation('relu'))
 mu_model.add(Dense(16))
 mu_model.add(Activation('relu'))
 mu_model.add(Dense(nb_actions))
-mu_model.add(Activation('linear'))
+mu_model.add(Activation('relu'))
 print(mu_model.summary())
 
 action_input = Input(shape=(nb_actions,), name='action_input')
@@ -53,7 +53,7 @@ x = Activation('relu')(x)
 x = Dense(32)(x)
 x = Activation('relu')(x)
 x = Dense(((nb_actions * nb_actions + nb_actions) / 2))(x)
-x = Activation('linear')(x)
+x = Activation('relu')(x)
 L_model = Model(input=[action_input, observation_input], output=x)
 print(L_model.summary())
 
@@ -63,8 +63,8 @@ memory = SequentialMemory(limit=100000)
 random_process = OrnsteinUhlenbeckProcess(theta=.15, mu=0., sigma=.3, size=nb_actions)
 agent = ContinuousDQNAgent(nb_actions=nb_actions, V_model=V_model, L_model=L_model, mu_model=mu_model,
                            memory=memory, nb_steps_warmup=100, random_process=random_process,
-                           gamma=.99, target_model_update=1e-3)
-agent.compile(Adam(lr=.001, clipnorm=1.), metrics=['mse'])
+                           gamma=.1, target_model_update=1)
+agent.compile(Adam(lr=.001, clipnorm=1.), metrics=['mae'])
 
 # Okay, now it's time to learn something! We visualize the training here for show, but this
 # slows down training quite a lot. You can always safely abort the training prematurely using
